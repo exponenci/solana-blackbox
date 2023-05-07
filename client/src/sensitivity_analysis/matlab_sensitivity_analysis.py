@@ -3,6 +3,7 @@ import socket
 
 from .sensitivity_analysis import SensitivityAnalysisMAbstract
 from src.utils.serializer import Serializer
+from .experiment_container import ExperimentContainer
 
 
 class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
@@ -20,7 +21,6 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
         self.sock = None
         self.addr = kwargs.get('addr', self.server_address)
         self.port = kwargs.get('port', self.server_port)
-        return self
 
     def __del__(self):
         self.close_connection()
@@ -43,23 +43,42 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
             self.sock.close()
             self.sock = None
 
-    def run(self, x=None, y=None, **kwargs):
-        if x is not None and y is not None:
-            self.accept_run_data(x, y, **kwargs) # parent method
+    def run(self, exp_container: ExperimentContainer, **kwargs):
+        if exp_container is None:
+            x = self.x
+            y = self.y
+            target_params_count = self.target_params_count
+        else:
+            x = exp_container.x_mat
+            y = exp_container.y_vec
+            target_params_count = exp_container.target_params_count
+        
+        # connect to matlab server
         self.connect_to_server(**kwargs)
+        
+        # sending data to run SA method
         self.send_chunk([
             [[self.method_id], 'INT32'],
-            [[*self.x.shape, self.target_params_count], 'INT32'],
-            [self.x],
-            [self.y],
+            [[*x.shape, target_params_count], 'INT32'],
+            [x],
+            [y],
         ])
-        is_error = self.expect_data('INT32')
-        if is_error[0] == 0:
-            most_valuable_params = self.expect_data('DOUBLE') # target_count indeces of most valuable params
-            return 0, most_valuable_params
+
+        # getting info wether error occured
+        exp_container.is_error = self.expect_data('INT32')[0]
+        if exp_container.is_error == 0:
+            # if there is no error then get result - best params to be optimized
+            exp_container.result = self.expect_data('DOUBLE')
         else:
+            # otherwise get error message
             error_info = self.expect_data('STRING')
-            return 1, ''.join(list(map(chr, error_info)))
+            exp_container.result = ''.join(list(map(chr, error_info)))
+
+        # close connection
+        self.close_connection()
+        
+        # return experiment container
+        return exp_container
 
     def send_chunk(self, args_chunk):
         for args_data in args_chunk:

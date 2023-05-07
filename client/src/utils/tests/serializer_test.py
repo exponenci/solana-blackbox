@@ -33,7 +33,7 @@ def test_serialization():
 
 def test_deserialization():
     ser = Serializer()
-    
+
     data = b'\x04\x00\x00\x00\x03\x00\x00\x00\x06\x00\x00\x00\x07\x00\x00\x00'
     deser_data = ser.deserialize(data, 'INT32')
     exp_res = [4, 3, 6, 7]
@@ -49,7 +49,7 @@ def test_deserialization():
     exp_res = [104, 101, 108, 108, 111, 44, 32, 105, 32, 97, 109, 32, 115, 117, 112, 101, 114, 45, 97, 98, 111, 98, 97, 33]
     # print(''.join(list(map(chr, exp_res)))) # can use this to be ensure
     assert ser_data == exp_res
-    
+
 
 if __name__ == '__main__':
     test_serialization()

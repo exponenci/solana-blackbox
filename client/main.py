@@ -1,6 +1,9 @@
-from src.sensitivity_analysis_methods.matlab_sensitivity_analysis import PCEMatlabM
+from src.sensitivity_analysis.matlab_sensitivity_analysis import PCEMatlabM
 # from matlab_sensitivity_analysis import GPMatlabM
 # from matlab_sensitivity_analysis import PCGPMatlabM
+
+from src.sensitivity_analysis.experiment_container import ExperimentContainer
+
 
 import numpy as np
 
@@ -18,22 +21,13 @@ class DataReader:
             print(f"case #{id}:")
             self.run_case(id)
 
-    ## TODO: 
-    # - socket.close after analysis was finished 
-    # - send 0 or 1 before target params to be sure error was not occured
-    # - make sa_method x, y and target_param properties
-
     def run_case(self, id):
-        x = np.loadtxt(f'{self.directory}/Xmatrix{id}.txt', dtype=np.float64, delimiter=',')
-        y = np.loadtxt(f'{self.directory}/ymatrix{id}.txt', dtype=np.float64, delimiter=',')
-        print(f"\tshape={x.shape}", end="\t")
-        sa_method = self.SAmethod(x, y, target_params_count=self.target)
-        err, res = sa_method.run(addr='10.193.88.211', port=9889)
-        if err:
-            print(res)
+        exp = ExperimentContainer().read_from_files(f'{self.directory}/Xmatrix{id}.txt', f'{self.directory}/ymatrix{id}.txt')
+        exp = self.SAmethod().run(exp, addr='10.193.88.211', port=9889)
+        if exp.is_error:
+            print(exp.result)
         else: 
-            print(f"best params to optimize={res}")
-        sa_method.close_connection()
+            print(f"best params to optimize={exp.result}")
 
 
 def main():
