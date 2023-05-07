@@ -180,6 +180,9 @@ while Xp<Nexp+1 % using a while statement here because need a way to redo iterat
     % evaluate function for non-MCSA methods
     ysobMM=monsterfunc(XsobMM,MCSAinput.mpars);
     
+    writematrix(XsobMM, 'Xmatrix' + string(Xp));
+    writematrix(ysobMM, 'ymatrix' + string(Xp));
+
     % Get "true" values of ST by doing large-sample MCSA
     
     uqlab;
