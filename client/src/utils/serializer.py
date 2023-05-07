@@ -2,7 +2,6 @@ import array
 from enum import Enum
 # from typing import List
 
-# from ...src.sensitivity_analysis_methods.sensitivity_analysis import SensitivityAnalysisMAbstract
 
 class Serializer():
     """ Used for serializing/deserializing data for tcp connections"""
@@ -25,9 +24,10 @@ class Serializer():
         """ 
             returns array binary data to be shared according to data 
             and it's type 
+        
+            # data - list of dtype values
+            # returns bytes
         """
-        # data - list of dtype values
-        # returns bytes
         if type(dtype) == str:
             dtype = self.match_str2enum(dtype)
         typecode = 'b'

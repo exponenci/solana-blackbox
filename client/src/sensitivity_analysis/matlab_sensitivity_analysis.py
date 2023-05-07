@@ -1,5 +1,6 @@
 import os
 import socket
+from typing import Any, List, Tuple
 
 from .sensitivity_analysis import SensitivityAnalysisMAbstract
 from src.utils.serializer import Serializer
@@ -18,7 +19,7 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
         # run in other process? multi connection?
         super().__init__(*args, **kwargs)
         self.method_id = method_id
-        self.sock = None
+        self._sock = None
         self.addr = kwargs.get('addr', self.server_address)
         self.port = kwargs.get('port', self.server_port)
 
@@ -29,49 +30,40 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
         """ connects to matlab server
             returns False if already connected
         """
-        if self.sock is None:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self._sock is None:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if addr is not None and port is not None:
                 self.addr = addr
                 self.port = port
-            self.sock.connect((self.addr, self.port))
+            self._sock.connect((self.addr, self.port))
             return True
         return False
     
-    def close_connection(self):
-        if self.sock is not None:
-            self.sock.close()
-            self.sock = None
+    def close_connection(self) -> None:
+        if self._sock is not None:
+            self._sock.close()
+            self._sock = None
 
-    def run(self, exp_container: ExperimentContainer, **kwargs):
-        if exp_container is None:
-            x = self.x
-            y = self.y
-            target_params_count = self.target_params_count
-        else:
-            x = exp_container.x_mat
-            y = exp_container.y_vec
-            target_params_count = exp_container.target_params_count
-        
+    def run(self, exp_container: ExperimentContainer, **kwargs) -> ExperimentContainer:
         # connect to matlab server
         self.connect_to_server(**kwargs)
         
         # sending data to run SA method
-        self.send_chunk([
+        self._send_chunk([
             [[self.method_id], 'INT32'],
-            [[*x.shape, target_params_count], 'INT32'],
-            [x],
-            [y],
+            [[*exp_container.x_mat.shape, exp_container.target_params_count], 'INT32'],
+            [exp_container.x_mat],
+            [exp_container.y_vec],
         ])
 
         # getting info wether error occured
-        exp_container.is_error = self.expect_data('INT32')[0]
-        if exp_container.is_error == 0:
+        exp_container.is_error = self._expect_data('INT32')[0] != 0
+        if not exp_container.is_error:
             # if there is no error then get result - best params to be optimized
-            exp_container.result = self.expect_data('DOUBLE')
+            exp_container.result = self._expect_data('DOUBLE')
         else:
             # otherwise get error message
-            error_info = self.expect_data('STRING')
+            error_info = self._expect_data('STRING')
             exp_container.result = ''.join(list(map(chr, error_info)))
 
         # close connection
@@ -80,25 +72,25 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
         # return experiment container
         return exp_container
 
-    def send_chunk(self, args_chunk):
+    def _send_chunk(self, args_chunk: List[Tuple[Any, str]]) -> None:
         for args_data in args_chunk:
-            self.send_data(*args_data)
+            self._send_data(*args_data)
 
-    def send_data(self, data, dtype: str = 'pass'):
+    def _send_data(self, data: Any, dtype: str = 'pass') -> None:
         if dtype != 'pass':
             bytes_to_send = self.serializer.serialize(data, dtype)
-            self.sock.sendall(bytes_to_send)
+            self._sock.sendall(bytes_to_send)
         else:
-            self.sock.sendall(data)
+            self._sock.sendall(data)
 
-    def expect_chunk(self, args_chunk):
+    def _expect_chunk(self, args_chunk: List[str]) -> Any:
         result = list()
         for args_data in args_chunk:
-            result.append(self.expect_data(*args_data))
+            result.append(self._expect_data(*args_data))
         return result
 
-    def expect_data(self, dtype: str = 'pass'):
-        raw_bytes = self.sock.recv(self.SOCKET_FRAME_SIZE)
+    def _expect_data(self, dtype: str = 'pass') -> Any:
+        raw_bytes = self._sock.recv(self.SOCKET_FRAME_SIZE)
         if dtype == 'pass':
             return raw_bytes
         received_data = self.serializer.deserialize(raw_bytes, dtype)

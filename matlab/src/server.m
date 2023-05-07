@@ -25,9 +25,15 @@ end
 
 
 function connectionFcn(src, ~)
-disp("Client connected");
-while src.Connected
+global DEBUG;
+if DEBUG == 1
+    disp("Client connected");
+end
+if src.Connected
     method_name_no = read(src,1,"int32");
+    if method_name_no == -1
+        return
+    end
     if method_name_no == 1 || method_name_no == 2 || method_name_no == 3
         if DEBUG == 1
             disp("receiving data for all methods");
