@@ -1,10 +1,13 @@
 ### VARIANT 1
+
+Pipeline().Run()
+
 blockchain = ChainRunner(configs_params)
 blockchain.RunNTimes(5)
 sa_method = PCEMatlabM(label='kek')
 x, y = blockchain.get_data()
 target_params = sa_method.run(x, y)
-so_method = Surrogate(save_result=True, label='kek')
+so_method = Surrogate(save_result=True, labsel='kek')
 so_method.OptimizeAndRun(blockchain, target_params)
 
 """after all so_methods runs"""
