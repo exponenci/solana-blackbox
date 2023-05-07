@@ -110,14 +110,14 @@ def run_monster(X):
     return res
 
 def get_xy(test_id):
-    x = np.loadtxt('testdata/Xmatrix' + str(test_id) + '.txt', dtype=np.float64, delimiter=',')
-    y = np.loadtxt('testdata/ymatrix' + str(test_id) + '.txt', dtype=np.float64, delimiter=',')
+    x = np.loadtxt('client/tests/data/Xmatrix' + str(test_id) + '.txt', dtype=np.float64, delimiter=',')
+    y = np.loadtxt('client/tests/data/ymatrix' + str(test_id) + '.txt', dtype=np.float64, delimiter=',')
     return x, y
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     hostname = socket.gethostname()
-    print(hostname)
-    sock.connect(('192.168.96.3', 9889))
+    print(socket.gethostbyname(hostname))
+    sock.connect(('10.193.88.211', 9889))
     print("Connection to server established!")
     for i in range(1, 6):
         x, y = get_xy(i)
@@ -138,9 +138,18 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             target_count = 1
             sock.sendall(target_count.to_bytes(4, 'little')) # send target_count
 
-            print('waiting for results...')
-            for i in range(1):
+            tmp = sock.recv(1024)
+            print(tmp)
+            print(array.array('I', tmp))
+            if array.array('I', tmp)[0] == 0:                
+                print('waiting for results...')
+                for i in range(1):
+                    tmp = sock.recv(1024)
+                    doubles_sequence = array.array('d', tmp)
+                    print(i, doubles_sequence)
+                print('exp done\n')
+            else:
+                print('error occured!')
                 tmp = sock.recv(1024)
-                doubles_sequence = array.array('d', tmp)
-                print(i, doubles_sequence)
-            print('exp done\n')
+                print(tmp.decode())
+                print('exp done\n')

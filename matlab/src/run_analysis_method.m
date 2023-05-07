@@ -1,6 +1,7 @@
 function SAresult=run_analysis_method(X, y, target_count, method_name)
     uqlab;
     tic
+
     % https://www.mathworks.com/content/dam/mathworks/guide-or-book/matlab-production-server-guide.pdf
     % https://www.mathworks.com/matlabcentral/answers/328959-how-to-call-functions-from-another-m-file
     [Nset, dset] = size(X);
@@ -32,7 +33,6 @@ function SAresult=run_analysis_method(X, y, target_count, method_name)
         STs=zeros(dset,1); % put in some zeros to stop errors later on.
         SAresult.errorOccured=1;
     end
-
 
     [~,STord]=sort(STs,1,'descend'); % sort measure by descending order
     SAresult.target_params=STord(1:target_count);

@@ -2,6 +2,8 @@ import array
 from enum import Enum
 # from typing import List
 
+# from ...src.sensitivity_analysis_methods.sensitivity_analysis import SensitivityAnalysisMAbstract
+
 class Serializer():
     """ Used for serializing/deserializing data for tcp connections"""
     
@@ -11,6 +13,7 @@ class Serializer():
         """
         INT32 = 1
         DOUBLE = 2
+        STRING = 3
 
     def match_str2enum(self, dtype: str) -> SocketDtype:
         """
@@ -32,6 +35,8 @@ class Serializer():
             typecode = 'I' # now I = at least 16 bits, find way to make it explicit 32 bits
         elif dtype == self.SocketDtype.DOUBLE:
             typecode = 'd'
+        elif dtype == self.SocketDtype.STRING:
+            typecode = 'B'
         data_bytes = array.array(typecode, data).tobytes()
         return data_bytes
 
@@ -47,5 +52,7 @@ class Serializer():
             typecode = 'I'
         elif dtype == self.SocketDtype.DOUBLE:
             typecode = 'd'
+        elif dtype == self.SocketDtype.STRING:
+            typecode = 'B'
         sequence = array.array(typecode, data)
         return sequence.tolist()

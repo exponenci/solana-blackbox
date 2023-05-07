@@ -32,5 +32,3 @@ class SensitivityAnalysisMAbstract:
 
     def run(self, x=None, y=None, **kwargs):
         pure_virtual_method()
-
-

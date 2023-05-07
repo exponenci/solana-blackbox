@@ -1,6 +1,6 @@
-from matlab_sensitivity_analysis import PCEMatlabM
-from matlab_sensitivity_analysis import GPMatlabM
-from matlab_sensitivity_analysis import PCGPMatlabM
+from src.sensitivity_analysis_methods.matlab_sensitivity_analysis import PCEMatlabM
+# from matlab_sensitivity_analysis import GPMatlabM
+# from matlab_sensitivity_analysis import PCGPMatlabM
 
 import numpy as np
 
@@ -13,7 +13,7 @@ class DataReader:
         self.SAmethod = SAmethod
 
     def run_all(self):
-        print(f"[working with data in {self.directory}; {self.SAmethod.method_id}]")
+        print(f"[working with data in {self.directory};]") # self.SAmethod.method_id
         for id in self.ids:
             print(f"case #{id}:")
             self.run_case(id)
@@ -28,14 +28,16 @@ class DataReader:
         y = np.loadtxt(f'{self.directory}/ymatrix{id}.txt', dtype=np.float64, delimiter=',')
         print(f"\tshape={x.shape}", end="\t")
         sa_method = self.SAmethod(x, y, target_params_count=self.target)
-        res_params = sa_method.run(addr='192.168.96.3', port=9889)
-        # if sa_method.error_occured: 
-        print(f"best params to optimize={res_params}")
+        err, res = sa_method.run(addr='10.193.88.211', port=9889)
+        if err:
+            print(res)
+        else: 
+            print(f"best params to optimize={res}")
         sa_method.close_connection()
 
 
 def main():
-    DataReader('testdata', target=1).run_all()
+    DataReader('tests/data', target=1).run_all()
     # DataReader('small_runs_testdata', target=6).run_all()
 
 if __name__ == '__main__':

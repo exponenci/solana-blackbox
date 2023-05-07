@@ -1,12 +1,12 @@
 import os
 import socket
 
-from sensitivity_analysis import SensitivityAnalysisMAbstract
-from utils import Serializer
+from .sensitivity_analysis import SensitivityAnalysisMAbstract
+from src.utils.serializer import Serializer
 
 
 class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
-    SOCKET_FRAME_SIZE = os.getenv('MATLAB_DEFAULT_BUFFER_SIZE')
+    SOCKET_FRAME_SIZE = int(os.getenv('MATLAB_DEFAULT_BUFFER_SIZE', 1024))
 
     server_hostname = os.getenv('MATLAB_SERVER_HOSTNAME')
     server_address = os.getenv('MATLAB_SERVER_ADDRESS')
@@ -53,19 +53,30 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
             [self.x],
             [self.y],
         ])
-        most_valuable_params = self.expect_data('DOUBLE') # target_count indeces of most valuable params
-        return most_valuable_params
+        is_error = self.expect_data('INT32')
+        if is_error[0] == 0:
+            most_valuable_params = self.expect_data('DOUBLE') # target_count indeces of most valuable params
+            return 0, most_valuable_params
+        else:
+            error_info = self.expect_data('STRING')
+            return 1, ''.join(list(map(chr, error_info)))
 
     def send_chunk(self, args_chunk):
         for args_data in args_chunk:
-            self.send_to_server(*args_data)
+            self.send_data(*args_data)
 
-    def send_to_server(self, data, dtype: str = 'pass'):
+    def send_data(self, data, dtype: str = 'pass'):
         if dtype != 'pass':
             bytes_to_send = self.serializer.serialize(data, dtype)
             self.sock.sendall(bytes_to_send)
         else:
             self.sock.sendall(data)
+
+    def expect_chunk(self, args_chunk):
+        result = list()
+        for args_data in args_chunk:
+            result.append(self.expect_data(*args_data))
+        return result
 
     def expect_data(self, dtype: str = 'pass'):
         raw_bytes = self.sock.recv(self.SOCKET_FRAME_SIZE)
@@ -78,16 +89,13 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
 class PCEMatlabM(MatlabSensitivityAnalysisM):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(1, *args, **kwargs)
-        return self
 
 
 class GPMatlabM(MatlabSensitivityAnalysisM):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(2, *args, **kwargs)
-        return self
 
 
 class PCGPMatlabM(MatlabSensitivityAnalysisM):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(3, *args, **kwargs)
-        return self
