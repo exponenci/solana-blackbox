@@ -1,0 +1,66 @@
+version: "3.8"
+
+
+# export $(cat .env) docker stack ... 
+
+services:
+  genesis:
+    image: solana-base-with-config
+    volumes:
+      - /mnt/solana/dev/logs:/mnt/logs
+    networks:
+      - solana_net
+    ports:
+      - "80:80"
+      - "8001:8001"
+      - "8899:8899"
+      - "9900:9900"
+    command:
+      bash -c 'sleep 5 && 
+      nohup bash -c ./multinode-demo/faucet.sh & &&
+      RUST_LOG='trace' ./multinode-demo/bootstrap-validator.sh --enable-rpc-transaction-history --gossip-host genesis --log /mnt/logs/solana_genesis_node.txt'
+
+  validator:
+    image: solana-base-with-config
+    depends_on:
+      - genesis
+    volumes:
+      - /mnt/solana/dev/logs:/mnt/logs
+    networks:
+      - solana_net
+    command: 
+      bash -c "sleep 5 &&
+      RUST_LOG='trace' ./multinode-demo/validator.sh --label `hostname` --entrypoint genesis:8001  --rpc-port 8899 --log /mnt/logs/solana_validator_`hostname`.txt"
+    deploy:
+      replicas: 3
+      placement:
+        max_replicas_per_node: 3
+      resources:
+        limits:
+          cpus: '4'
+          memory: 1G
+        reservations:
+          cpus: '2'
+          memory: 500M
+
+  client:
+    image: solana-base-with-config
+    depends_on:
+      - validator
+    volumes:
+      - /mnt/solana/dev/logs:/mnt/logs
+    networks:
+      - solana_net
+    command: 
+      bash -c "sleep 5 && 
+      RUST_LOG='trace' ./multinode-demo/bench-tps.sh --tx_count 50 --duration 100 --entrypoint genesis:8001 --faucet genesis:9001  --log /mnt/logs/solana_client.txt"
+    # # you may uncomment, if you are running on several 
+    # deploy:
+    #   placement:
+    #     constraints: [node.role == manager]
+
+
+networks:
+  solana_net:
+    driver: overlay
+    attachable: true
