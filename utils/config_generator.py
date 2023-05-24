@@ -28,11 +28,11 @@ class TomlConfig:
 
     def _pretty_type(self, key: str, value):
         if self._param_types[key].startswith('u') or self._param_types[key] == 'Epoch':
-            return int(value)
+            return max(1, int(value))
         elif self._param_types[key].startswith('f'):
-            return value
+            return max(1e-8, value)
         else:
-            print(self._param_types[key])
+            print(key, self._param_types[key])
             raise RuntimeError('Unknown type in .toml file')
 
     def get(self):
@@ -44,6 +44,16 @@ class TomlConfig:
     def get_values_list(self) -> list:
         mapping = dict()
         for section in self._base_toml.values():
+            for key, value in section.items():
+                mapping[key] = value
+        result = list()
+        for key in self._all_keys:
+            result.append(mapping[key])
+        return result
+
+    def get_values_list_updated(self) -> list:
+        mapping = dict()
+        for section in self._updated_toml.values():
             for key, value in section.items():
                 mapping[key] = value
         result = list()
@@ -76,23 +86,52 @@ class TomlConfig:
                 section[key] = self._pretty_type(key, new_values[key])
         self.save()
 
-    def for_each(self, func):
+    def apply(self, func):
+        self.reset()
+        for section in self._updated_toml.values():
+            for key, value in section.items():
+                section[key] = self._pretty_type(key, func(key, value))
+        self.save()
+    
+    def set_ids_values(self, param_ids: list, param_values: list):
+        self.reset()
+        id_counter = 0
+        param_counter = 0
+        for section in self._updated_toml.values():
+            if param_counter == len(param_ids):
+                break
+            for key in section.keys():
+                if param_counter == len(param_ids):
+                    break
+                if id_counter == param_ids[param_counter]:
+                    section[key] = self._pretty_type(key, param_values[param_counter])
+                    param_counter += 1
+                id_counter += 1
+        self.save()
+
+    def map_ids_values(self, param_ids: list, apply_func: list):
+        self.reset()
+        id_counter = 0
+        param_counter = 0
+        for section in self._updated_toml.values():
+            if param_counter == len(param_ids):
+                break
+            for key, value in section.items():
+                if param_counter == len(param_ids):
+                    break
+                if id_counter == param_ids[param_counter]:
+                    section[key] = self._pretty_type(key, apply_func(key, value))
+                    param_counter += 1
+                id_counter += 1
+        self.save()
+
+    def for_each_param(self, func):
         self.reset()
         for section in self._updated_toml.values():
             for key, value in section.items():
                 section[key] = self._pretty_type(key, func(key, value))
                 yield self.save()
                 section[key] = value
-        self.reset()
-
-    def for_each_if(self, func, filter_func=lambda _k, _v: True):
-        self.reset()
-        for section in self._updated_toml.values():
-            for key, value in section.items():
-                if filter_func(key, value):
-                    section[key] = self._pretty_type(key, func(key, value))
-                    yield self.save()
-                    section[key] = value
         self.reset()
 
 
@@ -110,6 +149,6 @@ if __name__ == '__main__':
         "DEFAULT_TICKS_PER_SECOND": 790,
     })
 
-    for _ in tml.for_each_if(lambda k, v: v * 1.1):
+    for _ in tml.for_each_param(lambda k, v: v * 1.1):
         input('req_')
         print('next')
