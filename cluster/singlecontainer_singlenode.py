@@ -12,7 +12,7 @@ def run_cmd_get_output(cmd: str, cwd=None, in_shell=False):
     return proc.stdout, proc.stderr
 
 
-class OneHostSingleNode(Cluster):
+class SingleContainerSingleNode(Cluster):
     def __init__(self, configfile_path) -> None:
         super().__init__()
         self.work_dir = os.getenv('WORKDIR')
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     import time
 
     os.environ["WORKDIR"] = "/home/exponenci/course-work/project/"
-    host = OneHostSingleNode("client/src/utils/config.toml")
+    host = SingleContainerSingleNode("client/src/utils/config.toml")
     print(host.configfile_path)
     stdout, stderr = host.configure(build_container=False)
     print('CONFIGURE\n', stdout, stderr)
