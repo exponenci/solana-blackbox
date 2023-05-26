@@ -15,6 +15,7 @@ WORKDIR_PROJECT = "/home/exponenci/course-work/project/"
 
 def blackbox(cluster):
 
+    cluster.start_containers()
     print("STARTING CONFIGURATION PROCESS")
     cluster.configure()
     print("CLUSTER CONFIGURED")
@@ -27,11 +28,12 @@ def blackbox(cluster):
 
     print("RUNNING BENCHMARK")
     bench_res_log_file = '/mnt/logs/solana_client_stderr.txt'
-    cluster.run_client(logfile=bench_res_log_file)
+    cluster.run_client(tx_count=100000, duration=90, logfile=bench_res_log_file)
     print("BENCHMARK DONE. READING RESULTS")
     results = parse_from_file('/mnt/solana/dev/logs/solana_client_stderr.txt')
     print("RESULTS", results)
 
+    cluster.stop_containers()
     cluster.stop_cluster()
 
     return results
@@ -46,7 +48,6 @@ def limit_params(func, cluster, params_ids):
             config.map_ids_values(params_ids, apply_func)
         else:
             raise RuntimeError("file `config.toml` must be set")
-        
         results = func(cluster)
         return config.get_values_list_updated(), results
     return wrapper
@@ -73,41 +74,45 @@ def limit_params(func, cluster, params_ids):
 if __name__ == '__main__':
     os.environ["WORKDIR"] = "/home/exponenci/course-work/project/"
 
+    # cluster = SingleContainerMultiNode('config.toml')
+    # config = TomlConfig()
+    # print('blackbox default starting')
+    # print('param names: ', ','.join(config.get_all_keys()))
+    # params = config.get_values_list()
+    # tps, droprate = blackbox(cluster)
+    # with open('result.csv', 'a') as file:
+    #     line = params
+    #     line.append(tps)
+    #     line.append(droprate)
+    #     file.write(','.join(map(str, line)) + '\n')
+    # print('blackbox default finished', (tps, droprate))
+    # print('=' * 120)
+
     cluster = SingleContainerMultiNode(TARGET_CONFIG)
     limited_blackbox = limit_params(blackbox, cluster, list(range(63)))
-    for i in range(1):
-        print(f'blackbox #{i} starting')
-        params, res = limited_blackbox(apply_func=lambda k, v: np.random.uniform(0.9 * v, 1.1 * v))
+    for i in range(12):
+        print(f'blackbox +-10% #{i} starting')
+        params, res = limited_blackbox(apply_func=lambda v: np.random.uniform(0.9 * v, 1.1 * v))
         tps, droprate = res
         with open('result.csv', 'a') as file:
             line = params
             line.append(tps)
             line.append(droprate)
             file.write(','.join(map(str, line)) + '\n')
-        print(f'blackbox #{i} finished', res)
-        print(f'=' * 120)
+        print(f'blackbox +-10% #{i} finished', res)
+        print('=' * 120)
 
-    # config = TomlConfig(updated_filename=TARGET_CONFIG)
-    # for i in range(1):
-    #     config.apply(lambda k, v: np.random.uniform(0.9 * v, 1.1 * v))
-        # # updated_config = TomlConfig(TARGET_CONFIG)
-        # # result = blackbox(updated_config.get_values_list())
-        # config.save()
-        # result = blackbox(config.get_values_list())
-        # results = blackbox(config.get_values_list())
 
-    # update config as you wish
-    # config.set({
-    #     # "NUM_THREADS": 6,
-    #     # "DEFAULT_TICKS_PER_SLOT": 1020,
-    #     # "ITER_BATCH_SIZE": 500,
-    #     # "RECV_BATCH_MAX_CPU": 21,
-    #     # "DEFAULT_HASHES_PER_SECOND": 34343434334,
-    #     # "DEFAULT_TICKS_PER_SECOND": 790,
-    # })
-    # config.save() # saves to upd_config.toml
-    
-    # cluster = SingleContainerMultiNode(target_config, container_setting={'container-name': 'genesis-container', 'create': False})
-
-    # results = blackbox(cluster)
-    # print('average_tps: ', results[0], '; droprate: ', results[1])
+    # cluster = SingleContainerMultiNode(TARGET_CONFIG)
+    # limited_blackbox = limit_params(blackbox, cluster, list(set(range(66)) - {11, 15, 47} ))
+    # for i in range(8):
+    #     print(f'blackbox +-17% #{i} starting')
+    #     params, res = limited_blackbox(apply_func=lambda k, v: np.random.uniform(0.83 * v, 1.17 * v))
+    #     tps, droprate = res
+    #     with open('result.csv', 'a') as file:
+    #         line = params
+    #         line.append(tps)
+    #         line.append(droprate)
+    #         file.write(','.join(map(str, line)) + '\n')
+    #     print(f'blackbox +-17% #{i} finished', res)
+    #     print('=' * 120)

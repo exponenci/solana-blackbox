@@ -22,8 +22,8 @@ k=size(X,2);
 
 % define input dists as 0,1 uniform
 for ii=1:k
-    IOpts.Marginals(ii).Type = 'Uniform' ;
-    IOpts.Marginals(ii).Parameters = [0,1] ;
+    IOpts.Marginals(ii).Type = 'Gaussian' ;
+    IOpts.Marginals(ii).Parameters = [0.5,0.03] ;
 end
 myInput = uq_createInput(IOpts); %#ok<NASGU> % this stores the input info in UQlab (doesn't need to be called again directly)
 

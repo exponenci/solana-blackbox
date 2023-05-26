@@ -9,9 +9,9 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
 
 
-from src.sensitivity_analysis.matlab_sensitivity_analysis import (
+from sensitivity_analysis.matlab_sensitivity_analysis import (
     PCEMatlabM, GPMatlabM, PCGPMatlabM)
-from src.sensitivity_analysis.experiment_container import ExperimentContainer
+from sensitivity_analysis.experiment_container import ExperimentContainer
 
 
 class DataReader:

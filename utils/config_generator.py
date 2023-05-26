@@ -30,7 +30,7 @@ class TomlConfig:
         if self._param_types[key].startswith('u') or self._param_types[key] == 'Epoch':
             return max(1, int(value))
         elif self._param_types[key].startswith('f'):
-            return max(1e-8, value)
+            return max(1e-8, float(value))
         else:
             print(key, self._param_types[key])
             raise RuntimeError('Unknown type in .toml file')
@@ -95,34 +95,19 @@ class TomlConfig:
     
     def set_ids_values(self, param_ids: list, param_values: list):
         self.reset()
-        id_counter = 0
-        param_counter = 0
-        for section in self._updated_toml.values():
-            if param_counter == len(param_ids):
-                break
-            for key in section.keys():
-                if param_counter == len(param_ids):
-                    break
-                if id_counter == param_ids[param_counter]:
-                    section[key] = self._pretty_type(key, param_values[param_counter])
-                    param_counter += 1
-                id_counter += 1
+        cur_list = self.get_values_list()
+        tmp = cur_list[:]
+        for i, param_id in enumerate(param_ids):
+            cur_list[param_id] = param_values[i]
+        self.set_values_list(cur_list)
         self.save()
 
     def map_ids_values(self, param_ids: list, apply_func: list):
         self.reset()
-        id_counter = 0
-        param_counter = 0
-        for section in self._updated_toml.values():
-            if param_counter == len(param_ids):
-                break
-            for key, value in section.items():
-                if param_counter == len(param_ids):
-                    break
-                if id_counter == param_ids[param_counter]:
-                    section[key] = self._pretty_type(key, apply_func(key, value))
-                    param_counter += 1
-                id_counter += 1
+        cur_list = self.get_values_list()
+        for param_id in param_ids:
+            cur_list[param_id] = apply_func(cur_list[param_id])
+        self.set_values_list(cur_list)
         self.save()
 
     def for_each_param(self, func):

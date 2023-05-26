@@ -50,11 +50,16 @@ class SingleContainerMultiNode(Cluster):
             t.start()
             self.threads.append(t)
         
-        # # run faucet
-        # print("STARTING FAUCET")
-        # start_thread(lambda: subprocess.run(f"docker exec {self.container_name} nohup bash -c './multinode-demo/faucet.sh &'", shell=True))
-        # print("WAIT FOR FAUCET...")
-        # time.sleep(5)
+        print("STARTING SETUP")
+        subprocess.run(f"docker exec {self.container_name} bash -c './multinode-demo/setup.sh'", shell=True)
+        print("SETUP DONE")
+        time.sleep(10)
+
+        # run faucet
+        print("STARTING FAUCET")
+        start_thread(lambda: subprocess.run(f"docker exec {self.container_name} nohup bash -c './multinode-demo/faucet.sh 2>/dev/null &'", shell=True))
+        print("WAIT FOR FAUCET...")
+        time.sleep(10)
 
         # run bootstrap-validator
         print("STARTING BOOTSTRAP-VALIDATOR")
@@ -67,11 +72,15 @@ class SingleContainerMultiNode(Cluster):
             )
         else:
             start_thread(
-                lambda: subprocess.run(f"docker exec {self.container_name} nohup bash -c \
-                                        './multinode-demo/bootstrap-validator.sh --log /dev/null &'", shell=True)
+                lambda: subprocess.run(f"docker exec {self.container_name} bash -c \
+                                        './multinode-demo/bootstrap-validator.sh --log /dev/null'", shell=True)
             )
+            # start_thread(
+            #     lambda: subprocess.run(f"docker exec {self.container_name} nohup bash -c \
+            #                             './multinode-demo/bootstrap-validator.sh &'", shell=True)
+            # )
         print("WAIT FOR BOOTSTRAP-VALIDATOR...")
-        time.sleep(20)
+        time.sleep(120)
 
         # run validators
         print("STARTING VALIDATORS")
@@ -84,9 +93,10 @@ class SingleContainerMultiNode(Cluster):
                 )
             else:
                 start_thread(
-                    lambda: subprocess.run(f"docker exec {self.container_name} nohup bash -c \
-                                            './multinode-demo/validator.sh --log /dev/null &'", shell=True)
+                    lambda: subprocess.run(f"docker exec {self.container_name} bash -c \
+                                            './multinode-demo/validator.sh --log /dev/null'", shell=True)
                 )
+        time.sleep(50)
 
     def run_client(self, tx_count: int = 50, duration: int = 20, logfile: str = '/mnt/logs/solana_client_stderr.txt', *args):
         subprocess.run(f"docker exec {self.container_name} bash -c \

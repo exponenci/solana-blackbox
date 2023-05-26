@@ -3,7 +3,7 @@ import socket
 from typing import Any, List, Tuple
 
 from .sensitivity_analysis import SensitivityAnalysisMAbstract
-from src.utils.serializer import Serializer
+from utils.serializer import Serializer
 from .experiment_container import ExperimentContainer
 
 

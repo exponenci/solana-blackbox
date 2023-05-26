@@ -40,8 +40,8 @@ end
 
 % define input dists as 0,1 uniform
 for ii=1:k
-    IOpts.Marginals(ii).Type = 'Uniform' ;
-    IOpts.Marginals(ii).Parameters = [0,1] ;
+    IOpts.Marginals(ii).Type = 'Gaussian' ;
+    IOpts.Marginals(ii).Parameters = [0.5,0.03] ;
 end
 myInput = uq_createInput(IOpts); %#ok<NASGU> % this stores the input info in UQlab (doesn't need to be called again directly)
 
@@ -50,7 +50,7 @@ PCEOpts.MetaType='PCE';
 PCEOpts.Method = 'LARS';
 PCEOpts.TruncOptions.qNorm = 0.75;
 PCEOpts.TruncOptions.MaxInteraction=2;
-PCEOpts.Degree=1:5;
+PCEOpts.Degree=5;
 
 if usersamp==1
     PCEOpts.ExpDesign.Sampling='User';
