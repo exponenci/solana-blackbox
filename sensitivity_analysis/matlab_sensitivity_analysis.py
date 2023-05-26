@@ -4,7 +4,7 @@ from typing import Any, List, Tuple
 
 from .sensitivity_analysis import SensitivityAnalysisMAbstract
 from utils.serializer import Serializer
-from .experiment_container import ExperimentContainer
+from .experiment_container import SARunnerContainer
 
 
 class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
@@ -44,7 +44,7 @@ class MatlabSensitivityAnalysisM(SensitivityAnalysisMAbstract):
             self._sock.close()
             self._sock = None
 
-    def run(self, exp_container: ExperimentContainer, **kwargs) -> ExperimentContainer:
+    def run(self, exp_container: SARunnerContainer, **kwargs) -> SARunnerContainer:
         # connect to matlab server
         self.connect_to_server(**kwargs)
         

@@ -44,6 +44,7 @@ docker run \
 genesis_ip = $(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' genesis-container)
 echo "GENESIS IP: $genesis_ip"
 
+## running blockchain
 docker exec genesis-container bash -c "./multinode-demo/setup.sh && \
     nohup bash -c './multinode-demo/faucet.sh &' && \
     RUST_LOG='trace' ./multinode-demo/bootstrap-validator.sh \
@@ -53,6 +54,7 @@ docker exec validator-container bash -c "./multinode-demo/setup.sh && \
     RUST_LOG='trace' ./multinode-demo/validator.sh \
         --entrypoint genesis_node:8001 --rpc-port 8899 --log /mnt/logs/solana_validator.txt"
 
+## running benchmark
 docker exec client-container bash -c "./multinode-demo/setup.sh && ./multinode-demo/bench-tps.sh \
     --entrypoint genesis_node:8001 --faucet genesis_node:9900  > /mnt/logs/solana_client.txt 2>/mnt/logs/solana_client_stderr.txt"
 

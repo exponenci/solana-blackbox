@@ -1,8 +1,5 @@
 addpath(genpath('methods'));
 
-%HOSTNAME = getenv("MATLAB_SERVER_HOSTNAME");
-%ADDRESS = getenv("MATLAB_SERVER_ADDRESS");
-%PORT = getenv("MATLAB_SERVER_PORT");
 
 HOSTNAME = "DESKTOP-NOFUBS9";
 ADDRESS = resolvehost(HOSTNAME,"address");
@@ -58,11 +55,8 @@ if src.Connected
         else
             if DEBUG == 1
                 disp("returning result...");
-                % disp(SAresult.target_params);
             end
 
-            %xvec = reshape(SAresult.target_params.', 1, []);
-            %y = typecast(xvec, 'int32').';
             write(src, 0, "int32");
             write(src, result.target_params, 'double');
 

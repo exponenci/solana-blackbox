@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from io import StringIO
+
 
 @dataclass
-class ExperimentContainer:
+class SARunnerContainer:
     x_mat: np.array = None
     y_vec: np.array = None
     target_params_count: int = 6

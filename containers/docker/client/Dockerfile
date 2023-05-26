@@ -17,4 +17,4 @@ RUN ./multinode-demo/bench-tps.sh \
     --entrypoint $GENESIS_HOSTNAME:$GOSSIP_PORT \
     --faucet $GENESIS_HOSTNAME:$FAUCET_PORT \
     --tx_count $TX_COUNT \
-    --duration $DURATION > bench-tps-stdout.txt 2>bench-tps-stderr.txt
+    --duration $DURATION > /mnt/logs/bench-tps-stdout.txt 2>/mnt/logs/bench-tps-stderr.txt
