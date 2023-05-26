@@ -1,7 +1,8 @@
 import io
 import os
-import yaml
 import subprocess
+
+import yaml
 
 from cluster.cluster import Cluster
 
@@ -13,10 +14,10 @@ class StackCluster(Cluster):
                  composefile: str = 'docker-compose.yml',
                  logdir: str = '/mnt/solana/dev/logs', 
                  stack_name: str = 'solana_chain',
-                 validator_count: int = 1) -> None:
+                 validator_count: int = 1,
+                 remove_services: bool = False) -> None:
         super().__init__()
-        self.work_dir = os.getenv('WORKDIR')
-        self.configfile_path = os.path.join(self.work_dir, configfile_path) # must be on volume
+        self.configfile_path = os.path.join(os.getenv('WORKDIR'), configfile_path) # must be on volume
         self.configfile_volume = os.path.dirname(self.configfile_path)
         self.base_image = base_image
         self.validator_count = validator_count
@@ -25,32 +26,48 @@ class StackCluster(Cluster):
         self.stack_name = stack_name
         with open(composefile, 'r') as stream:
             self.compose_info = yaml.safe_load(stream)
+        self.remove_services = remove_services
 
-    def configure(self, *args, **kwargs):
-        self.compose_info['services']['genesis']['image'] = self.base_image
-        self.compose_info['services']['genesis']['volumes'] = [self.logdir + ':/mnt/logs', 
-                                                               self.configfile_volume + ':/solana/config']
-        self.compose_info['services']['genesis']['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
+    def start(self):
+        self.configure()
+        self.start_cluster()
 
-        self.compose_info['services']['validator']['image'] = self.base_image
-        self.compose_info['services']['validator']['volumes'] = [self.logdir + ':/mnt/logs', 
-                                                                 self.configfile_volume + ':/solana/config']
-        self.compose_info['services']['validator']['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
-        self.compose_info['services']['validator']['deploy']['replicas'] = self.validator_count
+    def configure(self):
+        genesis_service = self.compose_info['services']['genesis']
+        genesis_service['image'] = self.base_image
+        genesis_service['volumes'] = [self.logdir + ':/mnt/logs', 
+                                      self.configfile_volume + ':/solana/config']
+        genesis_service['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
 
-        self.compose_info['services']['client']['image'] = self.base_image
-        self.compose_info['services']['client']['volumes'] = [self.logdir + ':/mnt/logs', 
-                                                              self.configfile_volume + ':/solana/config']
-        self.compose_info['services']['client']['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
+
+        validator_service = self.compose_info['services']['validator']
+        validator_service['image'] = self.base_image
+        validator_service['volumes'] = [self.logdir + ':/mnt/logs', 
+                                        self.configfile_volume + ':/solana/config']
+        validator_service['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
+        validator_service['deploy']['replicas'] = self.validator_count
+
+
+        client_service = self.compose_info['services']['client']
+        client_service['image'] = self.base_image
+        client_service['volumes'] = [self.logdir + ':/mnt/logs', 
+                                     self.configfile_volume + ':/solana/config']
+        client_service['environment'] = ['TOML_CONFIG=/solana/config/config.toml']
+
 
         with io.open(self.composefile, 'w', encoding='utf8') as outfile:
             yaml.dump(self.compose_info, outfile, default_flow_style=False, allow_unicode=True)        
 
-    def start(self, *args):
+    def start_cluster(self):
         subprocess.run(f"docker stack deploy -c {self.composefile} {self.stack_name}", shell=True)
 
-    def stop(self, *args):
+    def run_client(self) -> None:
+        # executed in background via swarm
         pass
 
-    def clear(self, *args):
+    def stop(self):
+        if self.remove_services:
+            self.clear()
+
+    def clear(self):
         subprocess.run(f"docker stack rm {self.stack_name}", shell=True)

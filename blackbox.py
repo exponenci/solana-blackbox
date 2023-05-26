@@ -6,29 +6,21 @@ import consts
 
 
 def blackbox(cluster):
-
-    cluster.start_containers()
-    print("STARTING CONFIGURATION PROCESS")
-    cluster.configure()
-    print("CLUSTER CONFIGURED")
-    
     print("STARTING CLUSTER")
-    cluster.start_cluster(write_logs=False)
-    print("CLUSTER BUILD. WAIT FOR CONVERGENCE")
-    time.sleep(consts.BLOCKCHAIN_CONVERGENCE_TIME_IN_SEC)    
-    print("NODES CONVERGED")
+    cluster.start()
 
-    print("RUNNING BENCHMARK")
+    print("CLUSTER IS STARTED. WAITING FOR VALIDATORS CONVERGENCE")
+    time.sleep(consts.BLOCKCHAIN_CONVERGENCE_TIME_IN_SEC)    
+
+    print("VALIDATORS CONVERGED. RUNNING BENCHMARK")
     cluster.run_client(tx_count=consts.CLIENT_TX_COUNT, 
                        duration=consts.CLIENT_DURATION, 
                        logfile=consts.CONTAINER_LOGDIR_MOUNT + consts.CLIENT_LOGFILE)
-    print("BENCHMARK DONE. READING RESULTS")
+
     results = parse_from_file(consts.HOST_LOGDIR_MOUNT + consts.CLIENT_LOGFILE)
-    print("RESULTS", results)
+    print("BENCHMARK DONE. RESULTS", results)
 
-    cluster.stop_containers()
-    cluster.stop_cluster()
-
+    cluster.stop()
     return results
 
 

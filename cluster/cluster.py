@@ -3,14 +3,11 @@ def pure_virtual_function():
 
 
 class Cluster:
-    def configure(self) -> None:
+    def start(self, *args, **kwargs) -> None:
         pure_virtual_function()
 
-    def start(self) -> None:
+    def run_client(self, *args, **kwargs) -> None:
         pure_virtual_function()
 
-    def stop(self) -> None:
-        pure_virtual_function()
-
-    def clear(self) -> None:
+    def stop(self, *args, **kwargs) -> None:
         pure_virtual_function()
